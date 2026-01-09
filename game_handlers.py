@@ -107,3 +107,11 @@ async def help_handler(message: Message):
         text="To use this bot, simply send any message, and I will echo it back to you.\n"
              "Use /start to see the welcome message again."
     )
+
+
+@wordle.message(Command("wordle_reset"))
+async def help_handler(message: Message, state: FSMContext):
+    await message.answer(
+        text="Сброс игры", reply_markup=kb.get_main_keyboard()
+    )
+    await state.clear()
