@@ -63,7 +63,7 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
             text=f"Вы уже набрали 5 букв - отправляйте слово целиком нажатием ➡",
             reply_markup=kb.get_wordle_keyboard(data=data)
         )
-        await state.set_state(WordGame.next_letter)
+        await state.set_state(WordGame.try_word)
         return
     data['current_try'] += message.text[-1]
     await state.set_data(data)
