@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.filters.command import Command
 from keyboards import keyboards as kb
-
+from utils.wordle_utils import check_wordle_gues_for_noun
 from states import WordGame
 
 wordle = Router()
@@ -94,14 +94,23 @@ async def wordle_message_handler(message: Message, state: FSMContext):
         )
         await state.set_state(WordGame.next_letter)
         return
+
+    if not check_wordle_gues_for_noun(data['current_try']):
+        await message.answer(
+            text="Слово не является существительным. Попробуйте другое слово.",
+            reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
+        )
+        await state.set_state(WordGame.next_letter)
+        return
     data["guesses"].append(data["current_try"])
     data["current_try"] = ""
     data["tries"] += 1
 
     if data["word"] == data["guesses"][-1]:
         await message.answer(
-            text="Поздравляю! Вы угадали слово!",
+            text=f"Поздравляю! Вы угадали слово! {html.italic(data['word'])}🎉",
             reply_markup=kb.get_main_keyboard())
+        # Сохранить статистику в базу данных здесь
         await state.clear()
 
         return
@@ -110,6 +119,13 @@ async def wordle_message_handler(message: Message, state: FSMContext):
     if data["tries"] < MAX_TRIES:
         await message.answer(f"Не верно попробуйте снова. Осталось попыток: {MAX_TRIES - data['tries']}",
                              reply_markup=kb.get_wordle_keyboard(data=data))
+        # Распечатать все попытки и буквы в цвета состояний
+        await message.answer(
+            text="Текущие попытки:\n" +
+                 "\n".join([f"{idx + 1}. {html.bold(try_word)}"
+                            for idx, try_word in enumerate(data['guesses'])]),
+            reply_markup=kb.get_wordle_keyboard(data=data)
+        )
         await state.set_data(data)
         await state.set_state(WordGame.next_letter)
 
