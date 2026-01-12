@@ -8,9 +8,9 @@ from aiogram import Bot, Dispatcher, html, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from handlers import user
+from handlers.handlers import user
 
-from game_handlers import wordle
+from handlers.game_handlers import wordle
 
 
 load_dotenv()

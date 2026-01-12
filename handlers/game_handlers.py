@@ -2,7 +2,7 @@ from aiogram import html, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.filters.command import Command
-import keyboards as kb
+from keyboards import keyboards as kb
 
 from states import WordGame
 
@@ -38,19 +38,6 @@ async def wordle_handler(message: Message, state: FSMContext):
 async def wordle_next_letter_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     print(f"SET LETTER {data=}")
-    # if message.text == "➡":
-    #     if len(data['current_try']) < 5:
-    #         await message.answer(
-    #             text="Еще не 5 букв - добери до слова из 5 букв",
-    #             reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
-    #         )
-    #         return
-    #     await state.set_state(WordGame.try_word)
-    #     await message.answer(
-    #         text=f"Вы отправили: {data['current_try']}. Проверка...",
-    #         reply_markup=kb.get_wordle_keyboard(data=data)
-    #     )
-    #     return
     if message.text == "⬅":
         if len(data['current_try']) == 0:
             await message.answer(
@@ -75,6 +62,25 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
             reply_markup=kb.get_wordle_keyboard(data=data)
         )
         await state.set_state(WordGame.try_word)
+
+
+@wordle.message(WordGame.try_word, F.text == "⬅")
+async def wordle_message_handler(message: Message, state: FSMContext):
+    data = await state.get_data()
+    print(f"Try word {data=}")
+    if len(data['current_try']) == 0:
+        await message.answer(
+            text="Нет букв для удаления.",
+            reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
+        )
+    else:
+        data['current_try'] = data['current_try'][:-1]
+        await state.set_data(data)
+        await message.answer(
+            text="Буква удалена.",
+            reply_markup=kb.get_wordle_keyboard(data=data)
+        )
+    await state.set_state(WordGame.next_letter)
 
 
 @wordle.message(WordGame.try_word, F.text == "➡")

@@ -3,7 +3,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.filters.command import CommandStart, Command
 from datetime import date
-import keyboards as kb
+from keyboards import keyboards as kb
+
 from utils import get_joke_by_id
 from states import Reg
 
