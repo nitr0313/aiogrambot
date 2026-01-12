@@ -10,6 +10,14 @@ wordle = Router()
 MAX_TRIES = 3
 
 
+@wordle.message(Command("wordle_reset"))
+async def help_handler(message: Message, state: FSMContext):
+    await message.answer(
+        text="Сброс игры", reply_markup=kb.get_main_keyboard()
+    )
+    await state.clear()
+
+
 @wordle.message(Command("wordle"))
 async def wordle_handler(message: Message, state: FSMContext):
     await message.answer(
@@ -57,24 +65,29 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
             reply_markup=kb.get_wordle_keyboard(data=data)
         )
         return
-
+    data['current_try'] += message.text[-1]
+    await state.set_data(data)
+    await message.answer(
+        text=f"{message.text[-1]}", reply_markup=kb.get_wordle_keyboard(data=data))
     if len(data['current_try']) >= 5:
         await message.answer(
             text=f"Вы уже набрали 5 букв - отправляйте слово целиком нажатием ➡",
             reply_markup=kb.get_wordle_keyboard(data=data)
         )
         await state.set_state(WordGame.try_word)
-        return
-    data['current_try'] += message.text[-1]
-    await state.set_data(data)
-    await message.answer(
-        text=f"{message.text[-1]}", reply_markup=kb.get_wordle_keyboard(data=data))
 
 
-@wordle.message(WordGame.try_word)
+@wordle.message(WordGame.try_word, F.text == "➡")
 async def wordle_message_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     print(f"Try word {data=}")
+    if len(data['current_try']) < 5:
+        await message.answer(
+            text="Еще не 5 букв - добери до слова из 5 букв",
+            reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
+        )
+        await state.set_state(WordGame.next_letter)
+        return
     data["guesses"].append(data["current_try"])
     data["current_try"] = ""
     data["tries"] += 1
@@ -107,11 +120,3 @@ async def help_handler(message: Message):
         text="To use this bot, simply send any message, and I will echo it back to you.\n"
              "Use /start to see the welcome message again."
     )
-
-
-@wordle.message(Command("wordle_reset"))
-async def help_handler(message: Message, state: FSMContext):
-    await message.answer(
-        text="Сброс игры", reply_markup=kb.get_main_keyboard()
-    )
-    await state.clear()
