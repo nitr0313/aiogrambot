@@ -1,7 +1,7 @@
 from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
                            InlineKeyboardMarkup, InlineKeyboardButton)
 
-from utils import get_today_jokes
+from utils.utils import get_today_jokes
 
 
 def get_main_keyboard():
