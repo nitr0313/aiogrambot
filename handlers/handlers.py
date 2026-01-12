@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.filters.command import CommandStart, Command
 from datetime import date
+from db.dao import get_user, set_user
 from keyboards import keyboards as kb
 
 from utils.utils import get_joke_by_id
@@ -16,9 +17,10 @@ users_bd: dict = {}
 
 @user.message(CommandStart())
 async def start_handler(message: Message, state: FSMContext):
-    if message.from_user.id in users_bd:
+    user = await get_user(message.from_user.id)
+    if user is not None:
         await message.answer(
-            text=f"С возвращением, {html.bold(users_bd[message.from_user.id]['name'])}!",
+            text=f"С возвращением, {html.bold(user.full_name)}!",
             reply_markup=kb.get_main_keyboard()
         )
         return
@@ -34,24 +36,31 @@ async def start_handler(message: Message, state: FSMContext):
 @user.message(Reg.waiting_for_name)
 async def process_name(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
-    await message.answer("Сколько вам лет?")
-    await state.set_state(Reg.waiting_for_age)
-
-
-@user.message(Reg.waiting_for_age)
-async def process_age(message: Message, state: FSMContext):
-    await state.update_data(age=message.text)
+    # await message.answer("Сколько вам лет?")
     user_data = await state.get_data()
-    users_bd[message.from_user.id] = {
-        "name": user_data['name'],
-        "age": user_data['age'],
-        "registration_date": date.today().strftime("%d.%m.%Y")
-    }
+    user = await set_user(message.from_user.id, message.from_user.username, user_data['name'])
     await message.answer(
-        text=f"Регистрация завершена!\nВаше имя: {user_data['name']}\nВаш возраст: {user_data['age']}",
+        text=f"Регистрация завершена!\nВаше имя: {user_data['name']}\nДата регистрации: {date.today().strftime('%d.%m.%Y')}",
         reply_markup=kb.get_main_keyboard()
     )
     await state.clear()
+    await state.set_state(Reg.waiting_for_age)
+
+
+# @user.message(Reg.waiting_for_age)
+# async def process_age(message: Message, state: FSMContext):
+#     await state.update_data(age=message.text)
+    # user_data = await state.get_data()
+    # users_bd[message.from_user.id] = {
+    #     "name": user_data['name'],
+    #     "age": user_data['age'],
+    #     "registration_date": date.today().strftime("%d.%m.%Y")
+    # }
+    # await message.answer(
+    #     text=f"Регистрация завершена!\nВаше имя: {user_data['name']}\nВаш возраст: {user_data['age']}",
+    #     reply_markup=kb.get_main_keyboard()
+    # )
+    # await state.clear()
 
 
 @user.message(Command("help"))
