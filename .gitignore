@@ -162,3 +162,5 @@ cython_debug/
 .vscode/
 .isort.cfg
 .mypy.ini
+
+tests/
