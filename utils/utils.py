@@ -1,7 +1,7 @@
 import requests
 import random
 from datetime import date
-from parse_jokes import parser
+from utils.parse_jokes import parser
 
 
 today_jokes: dict = {

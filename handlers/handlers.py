@@ -5,7 +5,7 @@ from aiogram.filters.command import CommandStart, Command
 from datetime import date
 from keyboards import keyboards as kb
 
-from utils import get_joke_by_id
+from utils.utils import get_joke_by_id
 from states import Reg
 
 user = Router()
@@ -76,7 +76,7 @@ async def users_handler(message: Message):
 
 @user.message(Command("joke"))
 async def joke_handler(message: Message):
-    from utils import get_new_joke
+    from utils.utils import get_new_joke
     joke = await get_new_joke()
     await message.answer(text=joke, reply_markup=kb.get_joke_keyboard())
 
