@@ -9,6 +9,7 @@ def get_main_keyboard():
         keyboard=[
             [KeyboardButton(text="/start"), KeyboardButton(text="/help")],
             [KeyboardButton(text="/joke"), KeyboardButton(text="/myid")],
+            [KeyboardButton(text="/wordle")],
         ],
         resize_keyboard=True,
         input_field_placeholder="Выберите команду",

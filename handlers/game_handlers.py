@@ -108,7 +108,7 @@ async def wordle_message_handler(message: Message, state: FSMContext):
 
     guess = message.text.strip().lower()
     if data["tries"] < MAX_TRIES:
-        await message.answer(f"Не верно попробуйте снова. Осталось попыток: {7 - data['tries']}",
+        await message.answer(f"Не верно попробуйте снова. Осталось попыток: {MAX_TRIES - data['tries']}",
                              reply_markup=kb.get_wordle_keyboard(data=data))
         await state.set_data(data)
         await state.set_state(WordGame.next_letter)
@@ -123,6 +123,6 @@ async def wordle_message_handler(message: Message, state: FSMContext):
 @wordle.message(Command("game_help"))
 async def help_handler(message: Message):
     await message.answer(
-        text="To use this bot, simply send any message, and I will echo it back to you.\n"
-             "Use /start to see the welcome message again."
+        text="Wordle Game Help: Try to guess the 5-letter word within 3 attempts. "
+             "Use the keyboard to input letters and submit your guess with the ➡ button. Good luck!"
     )
