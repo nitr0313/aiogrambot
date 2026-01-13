@@ -7,7 +7,7 @@ from utils.wordle_utils import check_wordle_gues_for_noun
 from states import WordGame
 
 wordle = Router()
-MAX_TRIES = 3
+MAX_TRIES = 6
 
 
 @wordle.message(Command("wordle_reset"))
@@ -21,7 +21,7 @@ async def help_handler(message: Message, state: FSMContext):
 @wordle.message(Command("wordle"))
 async def wordle_handler(message: Message, state: FSMContext):
     await message.answer(
-        text="Wordle game is under construction. Stay tuned!",
+        text="Игра пока в разработке, но можно попробовать отгадать единственное слово.",
         reply_markup=kb.get_wordle_keyboard())
     await state.clear()
     # random word choice
@@ -110,7 +110,7 @@ async def wordle_message_handler(message: Message, state: FSMContext):
         await message.answer(
             text=f"Поздравляю! Вы угадали слово! {html.italic(data['word'])}🎉",
             reply_markup=kb.get_main_keyboard())
-        # Сохранить статистику в базу данных здесь
+        # TODO Сохранить статистику в базу данных здесь
         await state.clear()
 
         return
@@ -139,6 +139,6 @@ async def wordle_message_handler(message: Message, state: FSMContext):
 @wordle.message(Command("game_help"))
 async def help_handler(message: Message):
     await message.answer(
-        text="Wordle Game Help: Try to guess the 5-letter word within 3 attempts. "
-             "Use the keyboard to input letters and submit your guess with the ➡ button. Good luck!"
+        text="📖 Правила игры Wordle: Угадайте 5-буквенное слово за 6 попыток. "
+        "Вводите буквы с помощью клавиатуры и подтверждайте ответ кнопкой ➡. Удачи! 🍀"
     )

@@ -2,7 +2,8 @@ import asyncio
 
 from aiogram.types import BotCommand, BotCommandScopeDefault
 
-from create_bot import bot, dp, logger, admins
+from create_bot import bot, dp
+from settings import admins, logger
 from db.base import create_tables
 from handlers.handlers import user
 
@@ -48,4 +49,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Bot stopped by user")
+        logger.info("Bot stopped by user")

@@ -1,6 +1,7 @@
 import requests
 import random
 from datetime import date
+from db.dao import get_daily_jokes, set_daily_jokes
 from utils.parse_jokes import parser
 
 
@@ -14,9 +15,10 @@ async def get_new_joke() -> str:
     """
     dt_today = date.today().strftime("%d.%m.%Y")
     print("Get joke for date:", dt_today)
-    if today_jokes.get(dt_today):
+    jokes = await get_daily_jokes(dt_today)
+    if jokes:
         print("Returning cached joke for today.")
-        return random.choice(today_jokes[dt_today])
+        return random.choice(jokes)
     print("Fetching new jokes from RSS feed.")
     resp = requests.get("https://www.anekdot.ru/rss/export_j.xml")
     xml_data = resp.content
@@ -24,6 +26,7 @@ async def get_new_joke() -> str:
     if not jokes:
         return "No jokes found."
     today_jokes[dt_today] = jokes
+    jokes = await set_daily_jokes(dt_today, jokes)
     joke = random.choice(jokes)
     return joke
 

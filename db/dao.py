@@ -1,4 +1,5 @@
-from create_bot import logger
+import json
+from settings import logger
 from .base import connection
 from .models import User, WordleStats, DailyJokes
 from sqlalchemy import select
@@ -33,3 +34,48 @@ async def get_user(session, tg_id: int) -> Optional[User]:
     except SQLAlchemyError as e:
         logger.error(f"Ошибка при получении пользователя: {e}")
     return None
+
+
+@connection
+async def get_users(session) -> List[User]:
+    try:
+        users = await session.scalars(select(User))
+        return users.all()
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка при получении пользователей: {e}")
+    return None
+
+
+@connection
+async def set_daily_jokes(session, dt, jokes) -> Optional[User]:
+    print(f"Set jokes for date:", dt, jokes)
+    try:
+        db_jokes = await session.scalar(select(DailyJokes).filter_by(date=dt))
+        if not db_jokes:
+            jokes_dict = json.dumps(jokes)
+            print(f"{jokes_dict=}")
+            db_jokes = DailyJokes(date=dt, jokes_dict=jokes_dict)
+            print(f"{db_jokes}")
+            session.add(db_jokes)
+            await session.commit()
+            logger.info(f"Сохранили шутки за текущий день {dt}!")
+            return jokes
+        else:
+            logger.info(f"шутки за {dt} найдены!")
+            return json.loads(db_jokes.jokes_dict)
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка при шуток в БД: {e}")
+        await session.rollback()
+    return None
+
+
+@connection
+async def get_daily_jokes(session, dt) -> Optional[List[str]]:
+    try:
+        jokes = await session.scalar(select(DailyJokes).filter_by(date=dt))
+        if jokes:
+            return json.loads(jokes.jokes_dict)
+        return []
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка при получении шуток: {e}")
+    return []

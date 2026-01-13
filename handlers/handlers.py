@@ -3,8 +3,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.filters.command import CommandStart, Command
 from datetime import date
-from db.dao import get_user, set_user
+from db.dao import get_user, get_users, set_user
 from keyboards import keyboards as kb
+from settings import admins
 
 from utils.utils import get_joke_by_id
 from states import Reg
@@ -36,31 +37,14 @@ async def start_handler(message: Message, state: FSMContext):
 @user.message(Reg.waiting_for_name)
 async def process_name(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
-    # await message.answer("Сколько вам лет?")
     user_data = await state.get_data()
-    user = await set_user(message.from_user.id, message.from_user.username, user_data['name'])
+    user = await set_user(tg_id=message.from_user.id, username=message.from_user.username, full_name=user_data['name'])
     await message.answer(
         text=f"Регистрация завершена!\nВаше имя: {user_data['name']}\nДата регистрации: {date.today().strftime('%d.%m.%Y')}",
         reply_markup=kb.get_main_keyboard()
     )
     await state.clear()
     await state.set_state(Reg.waiting_for_age)
-
-
-# @user.message(Reg.waiting_for_age)
-# async def process_age(message: Message, state: FSMContext):
-#     await state.update_data(age=message.text)
-    # user_data = await state.get_data()
-    # users_bd[message.from_user.id] = {
-    #     "name": user_data['name'],
-    #     "age": user_data['age'],
-    #     "registration_date": date.today().strftime("%d.%m.%Y")
-    # }
-    # await message.answer(
-    #     text=f"Регистрация завершена!\nВаше имя: {user_data['name']}\nВаш возраст: {user_data['age']}",
-    #     reply_markup=kb.get_main_keyboard()
-    # )
-    # await state.clear()
 
 
 @user.message(Command("help"))
@@ -73,13 +57,14 @@ async def help_handler(message: Message):
 
 @user.message(Command("users"))
 async def users_handler(message: Message):
-    if message.from_user.id != 383283623 or not users_bd:
+    if message.from_user.id not in admins:
         await message.answer("No registered users.")
         return
     response = "Registered Users:\n"
-    for user_id, info in users_bd.items():
-        response += (f"ID: {user_id}, Name: {info['name']}, Age: {info['age']}, "
-                     f"Registered on: {info['registration_date']}\n")
+    users = await get_users()
+    for user in users:
+        response += (f"ID: {user.id}, Name: {user.full_name} "
+                     f"Registered on: {user.created_at}\n")
     await message.answer(response)
 
 
