@@ -16,6 +16,15 @@ class User(Base):
         "WordleStats", back_populates="user", cascade="all, delete-orphan")
 
 
+class WordleWord(Base):
+    __tablename__ = 'wordle_words'
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
+    word: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+
+
 # Модель для таблицы статистики Wordle
 class WordleStats(Base):
     __tablename__ = 'wordle_stats'
