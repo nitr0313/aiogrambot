@@ -2,6 +2,7 @@ from aiogram import html, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.filters.command import Command
+from db.dao import get_random_wordle_word
 from keyboards import keyboards as kb
 from utils.wordle_utils import check_wordle_gues_for_noun
 from states import WordGame
@@ -24,11 +25,13 @@ async def wordle_handler(message: Message, state: FSMContext):
         text="Игра пока в разработке, но можно попробовать отгадать единственное слово.",
         reply_markup=kb.get_wordle_keyboard())
     await state.clear()
-    # random word choice
+    word = await get_random_wordle_word()
+    print(f"START WORDLE GAME with word: {word}")
     await state.set_state(WordGame.next_letter)
     await state.update_data({
         "tries": 0,
-        "word": "проба",  # This should be replaced with a random word selection
+        "word": word.word,
+        "description": word.description,
         "current_try": "",
         "guesses": []
     })
