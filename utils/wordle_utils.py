@@ -1,9 +1,10 @@
 import requests
 # from config import YANDEX_DICT_API_KEY
 from decouple import config
+from db.dao import check_word_in_db
 
 
-def check_wordle_gues_for_noun(word: str) -> bool:
+async def check_wordle_gues_for_noun(word: str, use_db: bool = True) -> bool:
     """
     Проверка, является ли слово существительным.
     :param word: Слово для проверки
@@ -15,11 +16,13 @@ def check_wordle_gues_for_noun(word: str) -> bool:
         [{"text":"время","pos":"noun","tr":
             [{"text":"момент","pos":"noun","fr":1,"syn":... ""
     """
-    # Пример реализации: проверка по списку существительных
-    # В реальном приложении можно использовать библиотеку или API для проверки
+
+    if use_db:
+        result = await check_word_in_db(word)
+        return result
     API_KEY = config("YANDEX_DICT_API_KEY")
     url = f"https://dictionary.yandex.net/api/v1/dicservice.json/lookup?key={API_KEY}&lang=ru-ru&text={word}"
-    response = requests.get(url)
+    response = await requests.get(url)
     if response.status_code == 200:
         data = response.json()
         if 'def' in data:

@@ -1,14 +1,14 @@
 from aiogram import html, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, FSInputFile
 from aiogram.filters.command import CommandStart, Command
 from datetime import date
 from db.dao import get_user, get_users, set_user
 from keyboards import keyboards as kb
 from settings import admins
 
-from utils.utils import get_joke_by_id
-from states import Reg
+from utils.utils import create_img, get_joke_by_id
+from states import GenImg, Reg
 
 user = Router()
 
@@ -32,6 +32,23 @@ async def start_handler(message: Message, state: FSMContext):
         reply_markup=ReplyKeyboardRemove()
     )
     await state.set_state(Reg.waiting_for_name)
+
+
+@user.message(Command("gen_img"))
+async def gen_img_handler(message: Message, state: FSMContext):
+    await message.answer(text="Напишите 1  слово 5 букв", reply_markup=ReplyKeyboardRemove())
+
+    await state.set_state(GenImg.waiting_for_description)
+
+
+@user.message(GenImg.waiting_for_description)
+async def process_description(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    await message.answer("Generating image...")
+    img_path = await create_img(message.text)
+    photo = FSInputFile(img_path[0])
+    await message.answer_photo(photo=photo, caption="Here is your generated image!")
+    await state.clear()
 
 
 @user.message(Reg.waiting_for_name)

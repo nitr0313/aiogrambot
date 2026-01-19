@@ -1,8 +1,8 @@
 import json
 from settings import logger
 from .base import connection
-from .models import User, WordleStats, DailyJokes
-from sqlalchemy import select
+from .models import User, WordleStats, DailyJokes, WordleWord
+from sqlalchemy import func, select
 from typing import List, Dict, Any, Optional
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -84,14 +84,11 @@ async def set_daily_jokes(session, dt: str, jokes: List[str]) -> Optional[List[s
     :return: Описание
     :rtype: List[str] | None
     """
-    print(f"Set jokes for date:", dt, jokes)
     try:
         db_jokes = await session.scalar(select(DailyJokes).filter_by(date=dt))
         if not db_jokes:
-            jokes_list = json.dumps(jokes)
-            print(f"{jokes_list=}")
-            db_jokes = DailyJokes(date=dt, jokes_dict=jokes_list)
-            print(f"{db_jokes}")
+            jokes_dict = json.dumps(jokes)
+            db_jokes = DailyJokes(date=dt, jokes_dict=jokes_dict)
             session.add(db_jokes)
             await session.commit()
             logger.info(f"Сохранили шутки за текущий день {dt}!")
@@ -121,3 +118,60 @@ async def get_daily_jokes(session, dt) -> Optional[List[str]]:
     except SQLAlchemyError as e:
         logger.error(f"Ошибка при получении шуток: {e}")
     return []
+
+
+@connection
+async def fill_wordle_words(session, words: Dict[str, Dict[str, str]]):
+    """
+    fill_wordle_words - Заполняет таблицу WordleWord словами из переданного словаря.
+
+    :param session: SQLAlchemy сессия
+    :param words: Словарь слов и их описаний
+    :type words: Dict[str, Dict[str, str]]
+    """
+    db_words: set = {w_word for w_word in await session.scalars(select(WordleWord))}
+    try:
+        for word, description in words.items():
+            desc = description.get('definition', '')
+            # Start Filter only 5-letter nouns, excluding plural and archaic forms
+            if len(word) != 5:
+                continue
+            if 'мн.' in desc or 'устар.' in desc:
+                continue
+            # existing_word = await session.scalar(select(WordleWord).filter_by(word=word))
+            if word in db_words:
+                continue
+            # End Filters
+            new_word = WordleWord(
+                word=word, description=desc)
+            session.add(new_word)
+        await session.commit()
+        logger.info("Заполнили таблицу слов Wordle!")
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка при заполнении слов Wordle: {e}")
+        await session.rollback()
+
+
+@connection
+async def get_random_wordle_word(session) -> Optional[WordleWord]:
+    try:
+        word = await session.scalar(
+            select(WordleWord).order_by(func.random()).limit(1)
+        )
+        return word
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка при получении случайного слова Wordle: {e}")
+    return None
+
+
+@connection
+async def check_word_in_db(session, word: str) -> bool:
+    try:
+        existing_word = await session.scalar(
+            select(WordleWord).filter(func.lower(
+                WordleWord.word) == word.lower())
+        )
+        return existing_word is not None
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка при проверке слова в БД: {e}")
+    return False

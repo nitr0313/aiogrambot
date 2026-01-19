@@ -4,7 +4,7 @@ from aiogram.types import BotCommand, BotCommandScopeDefault
 
 from create_bot import bot, dp
 from settings import admins, logger
-from db.base import create_tables
+from db.base import create_tables, fill_tables
 from handlers.handlers import user
 
 from handlers.game_handlers import wordle
@@ -18,6 +18,8 @@ async def set_commands():
 async def start_bot():
     await set_commands()
     await create_tables()
+    # await fill_tables()
+
     for admin_id in admins:
         try:
             await bot.send_message(admin_id, f'Я запущен🥳.')

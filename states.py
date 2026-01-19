@@ -10,3 +10,8 @@ class WordGame(StatesGroup):
     next_letter = State()
     try_word = State()
     win = State()  # - not used yet - for collect static
+
+
+class GenImg(StatesGroup):
+    waiting_for_description = State()
+    generating = State()
