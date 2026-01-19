@@ -3,7 +3,7 @@ import random
 from datetime import date
 from db.dao import get_daily_jokes, set_daily_jokes
 from utils.parse_jokes import parser
-
+from settings import logger
 
 today_jokes: dict = {
 }
@@ -36,6 +36,11 @@ def get_today_jokes() -> list:
     Returns the list of jokes for today.
     """
     dt_today = date.today().strftime("%d.%m.%Y")
+    if jokes := today_jokes.get(dt_today):
+        logger.info("Returning cached jokes for today.")
+        return jokes
+    logger.info("Fetching jokes for today from the database.")
+    jokes = get_daily_jokes(dt_today)
     return today_jokes.get(dt_today, [])
 
 

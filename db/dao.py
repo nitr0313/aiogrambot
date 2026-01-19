@@ -9,6 +9,20 @@ from sqlalchemy.exc import SQLAlchemyError
 
 @connection
 async def set_user(session, tg_id: int, username: str, full_name: str) -> Optional[User]:
+    """
+    Добавляет нового пользователя в БД или обновляет существующего.
+    :param session: Сессия SQLAlchemy
+    :param tg_id: ID пользователя в Telegram
+    :param username: Имя пользователя
+    :param full_name: Полное имя пользователя
+    :return: Пользователь или None, если не удалось добавить
+    :rtype: User | None
+    """
+    logger.info(f"Пытаюсь добавить пользователя с ID {tg_id} в БД...")
+    if not tg_id or not username or not full_name:
+        logger.error(
+            "Необходимо указать tg_id, username и full_name для добавления пользователя.")
+        return None
     try:
         user = await session.scalar(select(User).filter_by(id=tg_id))
         if not user:
@@ -28,6 +42,13 @@ async def set_user(session, tg_id: int, username: str, full_name: str) -> Option
 
 @connection
 async def get_user(session, tg_id: int) -> Optional[User]:
+    """
+    Получает пользователя по его ID из БД.
+    :param session: Сессия SQLAlchemy
+    :param tg_id: ID пользователя
+    :return: Пользователь или None, если не найден
+    :rtype: User | None
+    """
     try:
         user = await session.scalar(select(User).filter_by(id=tg_id))
         return user
@@ -37,7 +58,13 @@ async def get_user(session, tg_id: int) -> Optional[User]:
 
 
 @connection
-async def get_users(session) -> List[User]:
+async def get_users(session) -> Optional[List[User]]:
+    """
+    Получает список всех пользователей из БД.
+    :param session: Сессия SQLAlchemy
+    :return: Список пользователей или None в случае ошибки
+    :rtype: List[User] | None
+    """
     try:
         users = await session.scalars(select(User))
         return users.all()
@@ -47,14 +74,23 @@ async def get_users(session) -> List[User]:
 
 
 @connection
-async def set_daily_jokes(session, dt, jokes) -> Optional[User]:
+async def set_daily_jokes(session, dt: str, jokes: List[str]) -> Optional[List[str]]:
+    """
+    Сохраняет шутки в БД для указанной даты.
+
+    :param session: Сессия SQLAlchemy
+    :param dt: Дата в формате строки, например "01.01.2023"
+    :param jokes: Список шуток для сохранения
+    :return: Описание
+    :rtype: List[str] | None
+    """
     print(f"Set jokes for date:", dt, jokes)
     try:
         db_jokes = await session.scalar(select(DailyJokes).filter_by(date=dt))
         if not db_jokes:
-            jokes_dict = json.dumps(jokes)
-            print(f"{jokes_dict=}")
-            db_jokes = DailyJokes(date=dt, jokes_dict=jokes_dict)
+            jokes_list = json.dumps(jokes)
+            print(f"{jokes_list=}")
+            db_jokes = DailyJokes(date=dt, jokes_dict=jokes_list)
             print(f"{db_jokes}")
             session.add(db_jokes)
             await session.commit()
@@ -71,6 +107,12 @@ async def set_daily_jokes(session, dt, jokes) -> Optional[User]:
 
 @connection
 async def get_daily_jokes(session, dt) -> Optional[List[str]]:
+    """ Получает шутки из БД для указанной даты.
+    :param session: Сессия SQLAlchemy
+    :param dt: Дата в формате строки, например "01.01.2023"
+    :return: Список шуток или пустой список, если шутки не найдены
+    :rtype: List[str] | None
+    """
     try:
         jokes = await session.scalar(select(DailyJokes).filter_by(date=dt))
         if jokes:
