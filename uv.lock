@@ -35,6 +35,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "aiogram" },
     { name = "aiosqlite" },
+    { name = "html2image" },
     { name = "lxml" },
     { name = "lxml-stubs" },
     { name = "python-decouple" },
@@ -46,6 +47,7 @@ dependencies = [
 requires-dist = [
     { name = "aiogram", specifier = ">=3.24.0" },
     { name = "aiosqlite", specifier = ">=0.22.1" },
+    { name = "html2image", specifier = "==2.0.7" },
     { name = "lxml", specifier = ">=6.0.2" },
     { name = "lxml-stubs", specifier = ">=0.5.1" },
     { name = "python-decouple", specifier = ">=3.8" },
@@ -321,6 +323,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/57/b9/f8025d71a6085c441a7eaff0fd928bbb275a6633773667023d19179fe815/greenlet-3.3.0-cp314-cp314t-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3c6e9b9c1527a78520357de498b0e709fb9e2f49c3a513afd5a249007261911b", size = 653783, upload-time = "2025-12-04T14:26:06.225Z" },
     { url = "https://files.pythonhosted.org/packages/f6/c7/876a8c7a7485d5d6b5c6821201d542ef28be645aa024cfe1145b35c120c1/greenlet-3.3.0-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:286d093f95ec98fdd92fcb955003b8a3d054b4e2cab3e2707a5039e7b50520fd", size = 1614857, upload-time = "2025-12-04T15:04:28.484Z" },
     { url = "https://files.pythonhosted.org/packages/4f/dc/041be1dff9f23dac5f48a43323cd0789cb798342011c19a248d9c9335536/greenlet-3.3.0-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:6c10513330af5b8ae16f023e8ddbfb486ab355d04467c4679c5cfe4659975dd9", size = 1676034, upload-time = "2025-12-04T14:27:33.531Z" },
+]
+
+[[package]]
+name = "html2image"
+version = "2.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "websocket-client" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/3a/74472f59c11d0667add3cbd8abea101e9756f6ffec3dce27a8eb62415f8b/html2image-2.0.7.tar.gz", hash = "sha256:8644fd424cff2805977f4583f965b0235733f9eb08569e4c02f6befe6e7fafcc", size = 719888, upload-time = "2025-05-16T20:18:54.088Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/52/ee/967dd1f3ee63c56288ddcb6ceccecf0ce7e0a2fb0fb519c4e4013d7333e5/html2image-2.0.7-py3-none-any.whl", hash = "sha256:1806df797e8320ba3246f45149e7034314911be6a285787cbff3edf5bbe9de40", size = 31948, upload-time = "2025-05-16T20:18:52.432Z" },
 ]
 
 [[package]]
@@ -711,6 +726,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+]
+
+[[package]]
+name = "websocket-client"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/41/aa4bf9664e4cda14c3b39865b12251e8e7d239f4cd0e3cc1b6c2ccde25c1/websocket_client-1.9.0.tar.gz", hash = "sha256:9e813624b6eb619999a97dc7958469217c3176312b3a16a4bd1bc7e08a46ec98", size = 70576, upload-time = "2025-10-07T21:16:36.495Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/34/db/b10e48aa8fff7407e67470363eac595018441cf32d5e1001567a7aeba5d2/websocket_client-1.9.0-py3-none-any.whl", hash = "sha256:af248a825037ef591efbf6ed20cc5faa03d3b47b9e5a2230a529eeee1c1fc3ef", size = 82616, upload-time = "2025-10-07T21:16:34.951Z" },
 ]
 
 [[package]]
