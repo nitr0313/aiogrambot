@@ -1,9 +1,10 @@
 from aiogram import html, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from aiogram.filters.command import Command
 from db.dao import get_random_wordle_word
 from keyboards import keyboards as kb
+from utils.utils import generate_wordle_image
 from utils.wordle_utils import check_wordle_gues_for_noun
 from states import WordGame
 
@@ -26,6 +27,12 @@ async def wordle_handler(message: Message, state: FSMContext):
         reply_markup=kb.get_wordle_keyboard())
     await state.clear()
     word = await get_random_wordle_word()
+    if not word:
+        await message.answer(
+            text="Ошибка при получении слова для игры. Попробуйте позже.",
+            reply_markup=kb.get_main_keyboard())
+        await state.clear()
+        return
     print(f"START WORDLE GAME with word: {word}")
     await state.set_state(WordGame.next_letter)
     await state.update_data({
@@ -41,19 +48,20 @@ async def wordle_handler(message: Message, state: FSMContext):
 async def wordle_next_letter_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     print(f"SET LETTER {data=}")
+    await message.delete()
     if message.text == "⬅":
         if len(data['current_try']) == 0:
-            await message.answer(
-                text="Нет букв для удаления.",
-                reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
-            )
+            # await message.answer(
+            #     text="Нет букв для удаления.",
+            #     reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
+            # )
             return
         data['current_try'] = data['current_try'][:-1]
         await state.set_data(data)
-        await message.answer(
-            text="Буква удалена.",
-            reply_markup=kb.get_wordle_keyboard(data=data)
-        )
+        # await message.answer(
+        #     text="Буква удалена.",
+        #     reply_markup=kb.get_wordle_keyboard(data=data)
+        # )
         return
     data['current_try'] += message.text[-1]
     await state.set_data(data)
@@ -71,18 +79,23 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
 async def wordle_message_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     print(f"Try word {data=}")
-    if len(data['current_try']) == 0:
-        await message.answer(
-            text="Нет букв для удаления.",
-            reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
-        )
-    else:
+
+    if len(data['current_try']):
         data['current_try'] = data['current_try'][:-1]
         await state.set_data(data)
-        await message.answer(
-            text="Буква удалена.",
-            reply_markup=kb.get_wordle_keyboard(data=data)
-        )
+
+    # if len(data['current_try']) == 0:
+        # await message.answer(
+        #     text="Нет букв для удаления.",
+        #     reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
+        # )
+    # else:
+    #     data['current_try'] = data['current_try'][:-1]
+    #     await state.set_data(data)
+        # await message.answer(
+        #     text="Буква удалена.",
+        #     reply_markup=kb.get_wordle_keyboard(data=data)
+        # )
     await state.set_state(WordGame.next_letter)
 
 
@@ -106,12 +119,19 @@ async def wordle_message_handler(message: Message, state: FSMContext):
         await state.set_state(WordGame.next_letter)
         return
     data["guesses"].append(data["current_try"])
+    path_file = await generate_wordle_image(message.from_user.id, data["current_try"], data["tries"])
     data["current_try"] = ""
     data["tries"] += 1
 
+    photo = FSInputFile(path_file)
+    await message.answer_photo(
+        photo=photo,
+        caption=f"Попытка {data['tries']} из {MAX_TRIES}",
+        reply_markup=kb.get_wordle_keyboard(data=data)
+    )
     if data["word"] == data["guesses"][-1]:
         await message.answer(
-            text=f"Поздравляю! Вы угадали слово! {html.italic(data['word'])}🎉",
+            text=f"Поздравляю! Вы угадали слово! {html.italic(data['word'])}🎉 \n {data['description']}",
             reply_markup=kb.get_main_keyboard())
         # TODO Сохранить статистику в базу данных здесь
         await state.clear()
