@@ -5,6 +5,7 @@ from db.dao import get_daily_jokes, set_daily_jokes
 from utils.parse_jokes import parser
 from html2image import Html2Image
 from settings import logger
+from PIL import Image
 
 today_jokes: dict = {
 }
@@ -78,3 +79,29 @@ async def create_img(message: str):
         save_as="generated_image.png"
     )
     return path
+
+
+async def generate_wordle_image(user_id: int, word: str, attempt: int = 0) -> Image.Image:
+    """
+    Generates a Wordle-style image for the given word.
+    """
+    BASE_MEDIA_PATH = "media/wordle/"
+    BASE_STATIC_PATH = "static/wordle/"
+    if not attempt:
+        bg = Image.open(f"{BASE_STATIC_PATH}bg.png")
+    else:
+        bg = Image.open(f"{BASE_MEDIA_PATH}{user_id}_wordle.png")
+    image_path = [
+        f"{BASE_STATIC_PATH}{char.upper()}_yellow.png" for char in word]
+    # get files from static folder
+    # for char in word:
+    #     if not char.isalpha():
+    #         raise ValueError("Word must contain only alphabetic characters.")
+    img = Image.open(image_path[0])
+
+    for i in range(0, len(word)):
+        img = Image.open(image_path[i])
+        bg.paste(img, (5 + i * 140, 24 + attempt * 145), img)
+    path_file = f"{BASE_MEDIA_PATH}{user_id}_wordle.png"
+    bg.save(path_file)
+    return path_file
