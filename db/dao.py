@@ -21,9 +21,9 @@ async def set_user(session, tg_id: int, username: str, full_name: str) -> Option
     :rtype: User | None
     """
     logger.info(f"Пытаюсь добавить пользователя с ID {tg_id} в БД...")
-    if not tg_id or not username or not full_name:
+    if not tg_id or not full_name:
         logger.error(
-            "Необходимо указать tg_id, username и full_name для добавления пользователя.")
+            "Необходимо указать tg_id и full_name для добавления пользователя.")
         return None
     try:
         user = await session.scalar(select(User).filter_by(id=tg_id))
