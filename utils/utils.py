@@ -1,3 +1,5 @@
+from pathlib import Path
+from typing import List, Optional
 import requests
 import random
 from datetime import date
@@ -81,27 +83,54 @@ async def create_img(message: str):
     return path
 
 
-async def generate_wordle_image(user_id: int, word: str, attempt: int = 0) -> Image.Image:
+def wordle_logic(guess: str, secret: str) -> list[int]:
+    """
+    Compares the guessed word with the secret word and returns a list of integers
+    representing the result for each letter:
+    2 - correct letter in the correct position (yellow)
+    1 - correct letter in the wrong position (white)
+    0 - incorrect letter (black)
+    """
+    result = [0] * len(guess)
+    secret_temp: List[Optional[str]] = list(secret)
+    logger.debug(f"Comparing guess: {guess} with secret: {secret}")
+    # First pass: check for correct letters in correct positions
+    for i in range(len(guess)):
+        if guess[i] == secret[i]:
+            result[i] = 2
+            secret_temp[i] = None  # Mark this letter as used
+
+    # Second pass: check for correct letters in wrong positions
+    for i in range(len(guess)):
+        if result[i] == 0 and guess[i] in secret_temp:
+            result[i] = 1
+            # Mark this letter as used
+            secret_temp[secret_temp.index(guess[i])] = None
+    logger.debug(f"Result compare: {result}")
+
+    return result
+
+
+async def generate_wordle_image(user_id: int, guess: str, secret: str, attempt: int = 0) -> Path:
     """
     Generates a Wordle-style image for the given word.
     """
-    BASE_MEDIA_PATH = "media/wordle/"
-    BASE_STATIC_PATH = "static/wordle/"
+    BASE_MEDIA_PATH = Path("media/wordle/")  # TODO move to settings
+    BASE_STATIC_PATH = Path("static/wordle/")
     if not attempt:
-        bg = Image.open(f"{BASE_STATIC_PATH}bg.png")
+        bg = Image.open(BASE_STATIC_PATH / "bg.png")
     else:
-        bg = Image.open(f"{BASE_MEDIA_PATH}{user_id}_wordle.png")
+        bg = Image.open(BASE_MEDIA_PATH / f"{user_id}_wordle.png")
+    file_mask = wordle_logic(guess, secret)
+    colors = {0: 'black', 1: 'white', 2: 'yellow'}
     image_path = [
-        f"{BASE_STATIC_PATH}{char.upper()}_yellow.png" for char in word]
-    # get files from static folder
-    # for char in word:
-    #     if not char.isalpha():
-    #         raise ValueError("Word must contain only alphabetic characters.")
+        BASE_STATIC_PATH / f"{char.upper()}_{colors[i]}.png" for char, i in zip(guess, file_mask)]
+
     img = Image.open(image_path[0])
 
-    for i in range(0, len(word)):
+    for i in range(0, len(guess)):
         img = Image.open(image_path[i])
-        bg.paste(img, (5 + i * 140, 24 + attempt * 145), img)
-    path_file = f"{BASE_MEDIA_PATH}{user_id}_wordle.png"
+        bg.paste(img, (25 + i * 132, 25 + attempt * 132), img)
+    path_file = BASE_MEDIA_PATH / f"{user_id}_wordle.png"
     bg.save(path_file)
     return path_file
