@@ -1,8 +1,11 @@
 from typing import List, Optional
 from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
                            InlineKeyboardMarkup, InlineKeyboardButton)
-from settings import logger
+from settings import logging
 from utils.utils import get_today_jokes
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_main_keyboard():
