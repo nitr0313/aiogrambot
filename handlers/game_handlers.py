@@ -2,13 +2,15 @@ from aiogram import html, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, FSInputFile
 from aiogram.filters.command import Command
-from db.dao import get_random_wordle_word
+from db.dao import add_wordle_stats, get_random_wordle_word
 from keyboards import keyboards as kb
 from utils.utils import generate_wordle_image
 from utils.wordle_utils import check_wordle_gues_for_noun
 from states import WordGame
-from settings import logger
+from settings import logging
 
+
+logger = logging.getLogger(__name__)
 wordle = Router()
 MAX_TRIES = 6
 
@@ -35,7 +37,7 @@ async def wordle_handler(message: Message, state: FSMContext):
         await state.clear()
         return
     logger.info(
-        f"[GAME_HANDLERS.py wordle_handler] START WORDLE GAME with word: {secret}")
+        f"START WORDLE GAME with word: {secret.word}")
     await state.set_state(WordGame.next_letter)
     await state.update_data({
         "tries": 0,
@@ -50,7 +52,7 @@ async def wordle_handler(message: Message, state: FSMContext):
 async def wordle_next_letter_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     logger.debug(
-        f"[GAME_HANDLER] wordle_next_letter_handler {data=}")
+        f"wordle_next_letter_handler {data=}")
     await message.delete()
     if message.text == "⬅":
         if len(data['current_try']) == 0:
@@ -81,7 +83,7 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
 @wordle.message(WordGame.try_word, F.text == "⬅")
 async def wordle_backspase(message: Message, state: FSMContext):
     data = await state.get_data()
-    logger.debug(f'[GAME_HANDLER wordle_backspase F.text == "⬅"] {data=}')
+    logger.debug(f'F.text == "⬅"] {data=}')
 
     if len(data['current_try']):
         data['current_try'] = data['current_try'][:-1]
@@ -92,7 +94,7 @@ async def wordle_backspase(message: Message, state: FSMContext):
 @wordle.message(WordGame.try_word, F.text == "➡")
 async def wordle_check_word(message: Message, state: FSMContext):
     data = await state.get_data()
-    logger.debug(f'[GAME_HANDLER wordle_check_word F.text == "➡"] {data=}')
+    logger.debug(f'[F.text == "➡"] {data=}')
 
     if len(data['current_try']) < 5:
         await message.answer(
@@ -101,11 +103,11 @@ async def wordle_check_word(message: Message, state: FSMContext):
         )
         await state.set_state(WordGame.next_letter)
         return
-
-    if not check_wordle_gues_for_noun(data['current_try']):
+    word_is_noun = await check_wordle_gues_for_noun(data['current_try'])
+    if not word_is_noun:
         await message.answer(
             text="Слово не является существительным. Попробуйте другое слово.",
-            reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
+            reply_markup=kb.get_wordle_keyboard(data=data)
         )
         await state.set_state(WordGame.next_letter)
         return
@@ -124,12 +126,12 @@ async def wordle_check_word(message: Message, state: FSMContext):
         await message.answer(
             text=f"Поздравляю! Вы угадали слово! {html.italic(data['secret'])}🎉 \n {data['description']}",
             reply_markup=kb.get_main_keyboard())
-        # TODO Сохранить статистику в базу данных здесь
+        data['success'] = True
+        await add_wordle_stats(user_id=message.from_user.id, data=data)
         await state.clear()
 
         return
 
-    guess = message.text.strip().lower()
     if data["tries"] < MAX_TRIES:
         await message.answer(f"Не верно попробуйте снова. Осталось попыток: {MAX_TRIES - data['tries']}",
                              reply_markup=kb.get_wordle_keyboard(data=data))
@@ -147,6 +149,8 @@ async def wordle_check_word(message: Message, state: FSMContext):
         await message.answer(
             text=f"Конец игры! Правильное слово '{data['secret']}'.",
             reply_markup=kb.get_main_keyboard())
+        data['success'] = False
+        await add_wordle_stats(user_id=message.from_user.id, data=data)
         await state.clear()
 
 

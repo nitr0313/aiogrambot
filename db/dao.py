@@ -3,7 +3,7 @@ from settings import logger
 from .base import connection
 from .models import User, WordleStats, DailyJokes, WordleWord
 from sqlalchemy import func, select
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -175,3 +175,37 @@ async def check_word_in_db(session, word: str) -> bool:
     except SQLAlchemyError as e:
         logger.error(f"Ошибка при проверке слова в БД: {e}")
     return False
+
+
+@connection
+async def add_wordle_stats(session, user_id: int, data: Dict[str, Union[str, List]]) -> None:
+    logger.info(
+        f"Пытаюсь добавить статистику пользователя {user_id=} по игре wordle в БД")
+    try:
+        wordle_stat = WordleStats(
+            user_id=user_id, word=data['secret'], attempts=data['tries'], success=data['success'])
+        session.add(wordle_stat)
+        await session.commit()
+        logger.info(
+            f"Добавлена статистика пользваотеля с ID {user_id} по игре wordle!")
+        return None
+    except SQLAlchemyError as e:
+        logger.error(
+            f"Ошибка при добавлении статистики {user_id=} {data=}: {e}")
+        await session.rollback()
+    return None
+
+
+@connection
+async def get_wordle_stats(session, user_id) -> Optional[List[WordleStats]]:
+    logger.info(
+        f"Получение статистики по игре wordle для пользователя {user_id=}")
+    try:
+        games = await session.scalar(select(DailyJokes).filter_by(user_id=user_id))
+        if games:
+            return games
+        return []
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка при получении статистики {user_id=}: {e}")
+        await session.rollback()
+    return None
