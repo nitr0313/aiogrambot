@@ -1,6 +1,7 @@
+from typing import List, Optional
 from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
                            InlineKeyboardMarkup, InlineKeyboardButton)
-
+from settings import logger
 from utils.utils import get_today_jokes
 
 
@@ -32,7 +33,8 @@ def get_joke_keyboard():
 
 
 def get_wordle_keyboard(data: dict | None = None):
-    print(f"KEYBOARD: {data=}")
+    logger.debug(
+        f"[keyboards.py/get_wordle_keyboard] Generating Wordle keyboard with data: {data}")
 
     current_try: str = "_____"
     add_enter = False
@@ -84,22 +86,27 @@ def create_keyboard_line(letters: str, data: dict | None) -> list:
     :rtype: list
     """
     letter_status = ['⚪', '🔵', '🟢', '🔴']
-    secret_word = data['word'] if data and 'word' in data else ""
+    secret_word = data['secret'] if data and 'secret' in data else ""
     guesses = data['guesses'] if data and 'guesses' in data else []
     status_dict = {}
+    guesses_1: List[List[Optional[str]]] = [[], [], [], [], []]
     for guess in guesses:
         for i, char in enumerate(guess):
+            guesses_1[i].append(char)
+    for i in range(len(secret_word)):
+        if secret_word[i] in guesses_1[i]:
+            # правильная позиция
+            status_dict[secret_word[i]] = letter_status[2]
+    for i in range(len(secret_word)):
+        for char in guesses_1[i]:
+            if char == secret_word[i]:
+                continue
             if char in secret_word:
-                if secret_word[i] == char:
-                    status_dict[char] = letter_status[2]  # правильная позиция
-                else:
-                    if status_dict.get(char) != letter_status[2]:
-                        # в слове, но не на месте
-                        status_dict[char] = letter_status[1]
+                if status_dict.get(char) != letter_status[2]:
+                    status_dict[char] = letter_status[1]
             else:
                 if char not in status_dict:
                     status_dict[char] = letter_status[3]  # нет в слове
-
     line = [KeyboardButton(
-        text=f"{status_dict.get(char, letter_status[0])}{char}") for char in letters]
+        text=f"{status_dict.get(char, letter_status[0])}\n{char}") for char in letters]
     return line
