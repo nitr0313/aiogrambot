@@ -3,11 +3,13 @@ import asyncio
 from aiogram.types import BotCommand, BotCommandScopeDefault
 
 from create_bot import bot, dp
-from settings import admins, logger
+from settings import admins, logging
 from db.base import create_tables, fill_tables
 from handlers.handlers import user
 
 from handlers.game_handlers import wordle
+
+logger = logging.getLogger(__name__)
 
 
 async def set_commands():
