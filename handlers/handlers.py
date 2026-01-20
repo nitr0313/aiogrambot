@@ -5,7 +5,7 @@ from aiogram.filters.command import CommandStart, Command
 from datetime import date
 from db.dao import get_user, get_users, set_user
 from keyboards import keyboards as kb
-from settings import admins
+from settings import settings
 
 from utils.utils import create_img, get_joke_by_id
 from states import GenImg, Reg
@@ -74,7 +74,7 @@ async def help_handler(message: Message):
 
 @user.message(Command("users"))
 async def users_handler(message: Message):
-    if message.from_user.id not in admins:
+    if message.from_user.id not in settings.ADMINS:
         await message.answer("No registered users.")
         return
     response = "Registered Users:\n"
@@ -89,7 +89,8 @@ async def users_handler(message: Message):
 async def joke_handler(message: Message):
     from utils.utils import get_new_joke
     joke = await get_new_joke()
-    await message.answer(text=joke, reply_markup=kb.get_joke_keyboard())
+    jokes_kb = await kb.get_joke_keyboard()
+    await message.answer(text=joke, reply_markup=jokes_kb)
 
 
 @user.callback_query(F.data.startswith('joke_'))
@@ -100,7 +101,8 @@ async def joke_callback_handler(callback_query: CallbackQuery):
     await callback_query.answer(text=f"Вы выбрали шутку {joke_id}")
 
     if callback_query.message:
-        await callback_query.message.answer(text=get_joke_by_id(joke_id))
+        joke = await get_joke_by_id(joke_id)
+        await callback_query.message.answer(text=joke)
 
 
 @user.message(Command("myid"))

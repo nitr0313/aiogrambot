@@ -3,7 +3,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from settings import token
+from settings import settings
 
 # admins = [int(admin_id) for admin_id in admins.split(',')]
 # logging.basicConfig(level=logging.INFO,
@@ -11,6 +11,6 @@ from settings import token
 # logger = logging.getLogger(__name__)
 
 
-bot = Bot(token=token,
+bot = Bot(token=settings.TOKEN,
           default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())

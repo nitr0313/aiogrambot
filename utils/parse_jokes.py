@@ -1,8 +1,8 @@
 from lxml import etree
 import html
-from settings import logging
+from settings import settings
 
-logger = logging.getLogger(__name__)
+logger = settings.get_logger(__name__)
 
 
 def parser(xml_data):

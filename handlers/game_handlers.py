@@ -4,13 +4,12 @@ from aiogram.types import Message, FSInputFile
 from aiogram.filters.command import Command
 from db.dao import add_wordle_stats, get_random_wordle_word
 from keyboards import keyboards as kb
-from utils.utils import generate_wordle_image
-from utils.wordle_utils import check_wordle_gues_for_noun
+from utils.wordle_utils import generate_wordle_image, check_wordle_gues_for_noun
 from states import WordGame
-from settings import logging
+from settings import settings
 
 
-logger = logging.getLogger(__name__)
+logger = settings.get_logger(__name__)
 wordle = Router()
 MAX_TRIES = 6
 
@@ -26,7 +25,10 @@ async def help_handler(message: Message, state: FSMContext):
 @wordle.message(Command("wordle"))
 async def wordle_handler(message: Message, state: FSMContext):
     await message.answer(
-        text="Игра пока в разработке, но можно попробовать отгадать единственное слово.",
+        text=f"""Игра Wordle приветствует тебя, нужно: 
+            <b>- отгадать существительное из 🖐 букв</b>
+            <b>- за 6⃣ попыток!'</b>
+                💥Дерзай💥""",
         reply_markup=kb.get_wordle_keyboard())
     await state.clear()
     secret = await get_random_wordle_word()
@@ -44,7 +46,7 @@ async def wordle_handler(message: Message, state: FSMContext):
         "secret": secret.word,
         "description": secret.description,
         "current_try": "",
-        "guesses": []
+        "guesses": [],
     })
 
 
@@ -62,11 +64,12 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
             # )
             return
         data['current_try'] = data['current_try'][:-1]
-        await state.set_data(data)
         await message.answer(
             text="Буква удалена.",
             reply_markup=kb.get_wordle_keyboard(data=data)
         )
+        await state.set_data(data)
+
         return
     data['current_try'] += message.text[-1]
     await state.set_data(data)
@@ -87,6 +90,10 @@ async def wordle_backspase(message: Message, state: FSMContext):
 
     if len(data['current_try']):
         data['current_try'] = data['current_try'][:-1]
+        await message.answer(
+            text="Буква удалена.",
+            reply_markup=kb.get_wordle_keyboard(data=data)
+        )
         await state.set_data(data)
     await state.set_state(WordGame.next_letter)
 

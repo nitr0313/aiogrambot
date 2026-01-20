@@ -3,13 +3,13 @@ import asyncio
 from aiogram.types import BotCommand, BotCommandScopeDefault
 
 from create_bot import bot, dp
-from settings import admins, logging
+from settings import settings
 from db.base import create_tables, fill_tables
 from handlers.handlers import user
 
 from handlers.game_handlers import wordle
 
-logger = logging.getLogger(__name__)
+logger = settings.get_logger(__name__)
 
 
 async def set_commands():
@@ -22,7 +22,7 @@ async def start_bot():
     await create_tables()
     # await fill_tables()
 
-    for admin_id in admins:
+    for admin_id in settings.ADMINS:
         try:
             await bot.send_message(admin_id, f'Я запущен🥳.')
         except:
@@ -32,7 +32,7 @@ async def start_bot():
 # Функция, которая выполнится когда бот завершит свою работу
 async def stop_bot():
     try:
-        for admin_id in admins:
+        for admin_id in settings.ADMINS:
             await bot.send_message(admin_id, 'Бот остановлен. За что?😔')
     except:
         pass

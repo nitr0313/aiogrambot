@@ -1,10 +1,12 @@
 import json
-from settings import logger
+from settings import settings
 from .base import connection
 from .models import User, WordleStats, DailyJokes, WordleWord
 from sqlalchemy import func, select
 from typing import List, Dict, Any, Optional, Union
 from sqlalchemy.exc import SQLAlchemyError
+
+logger = settings.get_logger(__name__)
 
 
 @connection

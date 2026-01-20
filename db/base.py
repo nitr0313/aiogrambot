@@ -21,7 +21,6 @@ async def fill_tables():
     file = path.join(path.abspath(path.dirname(__file__)),
                      'russian_nouns_with_definition.json')
 
-    # from settings import wordle_words_dict
     with open(file, 'r', encoding='utf-8') as f:
         wordle_words_dict = json.load(f)
 
