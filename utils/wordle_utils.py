@@ -30,10 +30,3 @@ async def check_wordle_gues_for_noun(word: str, use_db: bool = True) -> bool:
                 if definition.get('pos') == 'noun':
                     return True
     return False
-
-
-if __name__ == "__main__":
-    test_words = ["время", "бежать", "красивый", "дом", "играть"]
-    for word in test_words:
-        is_noun = check_wordle_gues_for_noun(word)
-        print(f"Слово '{word}' является существительным: {is_noun}")

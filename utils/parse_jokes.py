@@ -1,5 +1,8 @@
 from lxml import etree
 import html
+from settings import logging
+
+logger = logging.getLogger(__name__)
 
 
 def parser(xml_data):
@@ -7,7 +10,7 @@ def parser(xml_data):
     Parses the XML data from the RSS feed and extracts jokes.
     Returns a list of jokes as strings.
     """
-    print("Parsing XML data...")
+    logging.info("Parsing XML data...")
     root = etree.fromstring(xml_data)
     jokes = []
     for item in root.findall('.//item'):
@@ -16,7 +19,7 @@ def parser(xml_data):
             text = description.text.strip().replace('<br>', '\n')
             text = html.unescape(text)
             jokes.append(text)
-    print(f"Extracted {len(jokes)} jokes.")
+    logging.debug(f"Extracted {len(jokes)} jokes.")
     return jokes
 
 
