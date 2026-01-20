@@ -7,6 +7,7 @@ from keyboards import keyboards as kb
 from utils.utils import generate_wordle_image
 from utils.wordle_utils import check_wordle_gues_for_noun
 from states import WordGame
+from settings import logger
 
 wordle = Router()
 MAX_TRIES = 6
@@ -26,19 +27,20 @@ async def wordle_handler(message: Message, state: FSMContext):
         text="Игра пока в разработке, но можно попробовать отгадать единственное слово.",
         reply_markup=kb.get_wordle_keyboard())
     await state.clear()
-    word = await get_random_wordle_word()
-    if not word:
+    secret = await get_random_wordle_word()
+    if not secret:
         await message.answer(
             text="Ошибка при получении слова для игры. Попробуйте позже.",
             reply_markup=kb.get_main_keyboard())
         await state.clear()
         return
-    print(f"START WORDLE GAME with word: {word}")
+    logger.info(
+        f"[GAME_HANDLERS.py wordle_handler] START WORDLE GAME with word: {secret}")
     await state.set_state(WordGame.next_letter)
     await state.update_data({
         "tries": 0,
-        "word": word.word,
-        "description": word.description,
+        "secret": secret.word,
+        "description": secret.description,
         "current_try": "",
         "guesses": []
     })
@@ -47,7 +49,8 @@ async def wordle_handler(message: Message, state: FSMContext):
 @wordle.message(WordGame.next_letter)
 async def wordle_next_letter_handler(message: Message, state: FSMContext):
     data = await state.get_data()
-    print(f"SET LETTER {data=}")
+    logger.debug(
+        f"[GAME_HANDLER] wordle_next_letter_handler {data=}")
     await message.delete()
     if message.text == "⬅":
         if len(data['current_try']) == 0:
@@ -58,10 +61,10 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
             return
         data['current_try'] = data['current_try'][:-1]
         await state.set_data(data)
-        # await message.answer(
-        #     text="Буква удалена.",
-        #     reply_markup=kb.get_wordle_keyboard(data=data)
-        # )
+        await message.answer(
+            text="Буква удалена.",
+            reply_markup=kb.get_wordle_keyboard(data=data)
+        )
         return
     data['current_try'] += message.text[-1]
     await state.set_data(data)
@@ -69,40 +72,28 @@ async def wordle_next_letter_handler(message: Message, state: FSMContext):
         text=f"{message.text[-1]}", reply_markup=kb.get_wordle_keyboard(data=data))
     if len(data['current_try']) >= 5:
         await message.answer(
-            text=f"Вы уже набрали 5 букв - отправляйте слово целиком нажатием ➡",
-            reply_markup=kb.get_wordle_keyboard(data=data)
+            text=f"Вы уже набрали 5 букв - отправляйте слово целиком нажатием ➡"  # ,
+            # reply_markup=kb.get_wordle_keyboard(data=data)
         )
         await state.set_state(WordGame.try_word)
 
 
 @wordle.message(WordGame.try_word, F.text == "⬅")
-async def wordle_message_handler(message: Message, state: FSMContext):
+async def wordle_backspase(message: Message, state: FSMContext):
     data = await state.get_data()
-    print(f"Try word {data=}")
+    logger.debug(f'[GAME_HANDLER wordle_backspase F.text == "⬅"] {data=}')
 
     if len(data['current_try']):
         data['current_try'] = data['current_try'][:-1]
         await state.set_data(data)
-
-    # if len(data['current_try']) == 0:
-        # await message.answer(
-        #     text="Нет букв для удаления.",
-        #     reply_markup=kb.get_wordle_keyboard(data=await state.get_data())
-        # )
-    # else:
-    #     data['current_try'] = data['current_try'][:-1]
-    #     await state.set_data(data)
-        # await message.answer(
-        #     text="Буква удалена.",
-        #     reply_markup=kb.get_wordle_keyboard(data=data)
-        # )
     await state.set_state(WordGame.next_letter)
 
 
 @wordle.message(WordGame.try_word, F.text == "➡")
-async def wordle_message_handler(message: Message, state: FSMContext):
+async def wordle_check_word(message: Message, state: FSMContext):
     data = await state.get_data()
-    print(f"Try word {data=}")
+    logger.debug(f'[GAME_HANDLER wordle_check_word F.text == "➡"] {data=}')
+
     if len(data['current_try']) < 5:
         await message.answer(
             text="Еще не 5 букв - добери до слова из 5 букв",
@@ -119,7 +110,7 @@ async def wordle_message_handler(message: Message, state: FSMContext):
         await state.set_state(WordGame.next_letter)
         return
     data["guesses"].append(data["current_try"])
-    path_file = await generate_wordle_image(message.from_user.id, data["current_try"], data["tries"])
+    path_file = await generate_wordle_image(message.from_user.id, data["current_try"], data["secret"], data["tries"])
     data["current_try"] = ""
     data["tries"] += 1
 
@@ -129,9 +120,9 @@ async def wordle_message_handler(message: Message, state: FSMContext):
         caption=f"Попытка {data['tries']} из {MAX_TRIES}",
         reply_markup=kb.get_wordle_keyboard(data=data)
     )
-    if data["word"] == data["guesses"][-1]:
+    if data["secret"] == data["guesses"][-1]:
         await message.answer(
-            text=f"Поздравляю! Вы угадали слово! {html.italic(data['word'])}🎉 \n {data['description']}",
+            text=f"Поздравляю! Вы угадали слово! {html.italic(data['secret'])}🎉 \n {data['description']}",
             reply_markup=kb.get_main_keyboard())
         # TODO Сохранить статистику в базу данных здесь
         await state.clear()
@@ -142,19 +133,19 @@ async def wordle_message_handler(message: Message, state: FSMContext):
     if data["tries"] < MAX_TRIES:
         await message.answer(f"Не верно попробуйте снова. Осталось попыток: {MAX_TRIES - data['tries']}",
                              reply_markup=kb.get_wordle_keyboard(data=data))
-        # Распечатать все попытки и буквы в цвета состояний
-        await message.answer(
-            text="Текущие попытки:\n" +
-                 "\n".join([f"{idx + 1}. {html.bold(try_word)}"
-                            for idx, try_word in enumerate(data['guesses'])]),
-            reply_markup=kb.get_wordle_keyboard(data=data)
-        )
+        # Распечатать все попытки и буквы в цвета состояний (Пока это не возможно)
+        # await message.answer(
+        #     text="Текущие попытки:\n" +
+        #          "\n".join([f"{idx + 1}. {html.bold(try_word)}"
+        #                     for idx, try_word in enumerate(data['guesses'])]),
+        #     reply_markup=kb.get_wordle_keyboard(data=data)
+        # )
         await state.set_data(data)
         await state.set_state(WordGame.next_letter)
 
     if data["tries"] >= MAX_TRIES:
         await message.answer(
-            text=f"Конец игры! Правильное слово '{data['word']}'.",
+            text=f"Конец игры! Правильное слово '{data['secret']}'.",
             reply_markup=kb.get_main_keyboard())
         await state.clear()
 
