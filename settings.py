@@ -4,7 +4,12 @@ from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class WordleSettings(BaseSettings):
+    MAX_TRIES = 6
+
+
 class Settings(BaseSettings):
+
     """Класс для хранения настроек бота."""
     DEBUG: bool = Field(
         default=False, description="Debuging status")
@@ -21,6 +26,8 @@ class Settings(BaseSettings):
     YANDEX_DICT_API_KEY: str = Field(
         default="", description="TG Bot Tocke from https://yandex.ru/dev/dictionary/keys/get/?service=dict")
     LOGGING_LEVEL: int = Field(default=logging.INFO, description="")
+
+    wordle: WordleSettings = Field(default_factory=WordleSettings)
 
     def get_logger(self, name=__name__):
         logging.basicConfig(level=self.LOGGING_LEVEL if not self.DEBUG else logging.DEBUG,

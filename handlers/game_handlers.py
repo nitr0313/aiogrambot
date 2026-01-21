@@ -11,7 +11,6 @@ from settings import settings
 
 logger = settings.get_logger(__name__)
 wordle = Router()
-MAX_TRIES = 6
 
 
 @wordle.message(Command("wordle_reset"))
@@ -126,7 +125,7 @@ async def wordle_check_word(message: Message, state: FSMContext):
     photo = FSInputFile(path_file)
     await message.answer_photo(
         photo=photo,
-        caption=f"Попытка {data['tries']} из {MAX_TRIES}",
+        caption=f"Попытка {data['tries']} из {settings.wordle.MAX_TRIES}",
         reply_markup=kb.get_wordle_keyboard(data=data)
     )
     if data["secret"] == data["guesses"][-1]:
@@ -139,8 +138,8 @@ async def wordle_check_word(message: Message, state: FSMContext):
 
         return
 
-    if data["tries"] < MAX_TRIES:
-        await message.answer(f"Не верно попробуйте снова. Осталось попыток: {MAX_TRIES - data['tries']}",
+    if data["tries"] < settings.wordle.MAX_TRIES:
+        await message.answer(f"Не верно попробуйте снова. Осталось попыток: {settings.wordle.MAX_TRIES - data['tries']}",
                              reply_markup=kb.get_wordle_keyboard(data=data))
         # Распечатать все попытки и буквы в цвета состояний (Пока это не возможно)
         # await message.answer(
@@ -152,7 +151,7 @@ async def wordle_check_word(message: Message, state: FSMContext):
         await state.set_data(data)
         await state.set_state(WordGame.next_letter)
 
-    if data["tries"] >= MAX_TRIES:
+    if data["tries"] >= settings.wordle.MAX_TRIES:
         await message.answer(
             text=f"Конец игры! Правильное слово '{data['secret']}'.",
             reply_markup=kb.get_main_keyboard())
