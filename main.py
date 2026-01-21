@@ -6,8 +6,8 @@ from create_bot import bot, dp
 from settings import settings
 from db.base import create_tables, fill_tables
 from handlers.handlers import user
+from handlers.wordle_handlers import wordle
 
-from handlers.game_handlers import wordle
 
 logger = settings.get_logger(__name__)
 
