@@ -5,7 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class WordleSettings(BaseSettings):
-    MAX_TRIES = 6
+    MAX_TRIES: int = Field(
+        default=6, description="Максимальное количество попыток")
 
 
 class Settings(BaseSettings):
